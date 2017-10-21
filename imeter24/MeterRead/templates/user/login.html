@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% load i18n static %}
+
+{% block content %}
+<style type="text/css">
+.mdl-layout {
+	align-items: center;
+ 	justify-content: center;
+}
+.mdl-layout__content {
+	padding: 24px;
+	flex: none;
+}
+.mdl-card {
+	width: 450px;
+	border-radius: 0px;
+	text-align: center;
+}
+.mdl-textfield {
+	width: 90%;
+}
+/*input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    background-color: red !important;
+}*/
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    transition: background-color 5000s ease-in-out 0s;
+}
+</style>
+<form action="{{ app_path }}" method="post" id="login-form">{% csrf_token %}
+<div class="mdl-layout mdl-js-layout mdl-color--grey-400">
+	<main class="mdl-layout__content">
+		<div class="mdl-card mdl-shadow--6dp">
+			<div class="mdl-card__title mdl-color--primary mdl-color-text--white">
+				<h2 class="mdl-card__title-text">Imeter24.com - Device Administraton</h2>
+			</div>
+	  	<div class="mdl-card__supporting-text">
+				
+					
+					<div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+						<input class="mdl-textfield__input" type="text" id="{{form.username.name}}" name="{{form.username.name}}" />
+						<label class="mdl-textfield__label" for="{{form.username.name}}">{{form.username.name}}</label>
+						<span class="mdl-textfield__error">{{form.username.error_message}}</span>
+					</div>
+
+					<div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+						<input class="mdl-textfield__input" type="password" id="{{form.password.name}}" name="{{form.password.name}}" />
+						<label class="mdl-textfield__label" for="{{form.password.name}}">Password</label>
+						<span class="mdl-textfield__error">{{form.password.error_message}}</span>
+					</div>
+
+					{% url 'admin_password_reset' as password_reset_url %}
+			        {% if password_reset_url %}
+			        <div class="password-reset-link">
+			          <a href="{{ password_reset_url }}">{% trans 'Forgotten your password or username?' %}</a>
+			        </div>
+			        {% endif %}
+
+				
+			</div>
+			<div class="mdl-card__actions mdl-card--border">
+				<button class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect" type="submit">Log in</button>
+			</div>
+		</div>
+	</main>
+</div>
+</form>
+		  
+{% endblock %}

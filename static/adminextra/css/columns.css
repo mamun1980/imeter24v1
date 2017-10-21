@@ -1,0 +1,28 @@
+#container {
+	min-width: 930px;
+}
+
+.dashboard #content {
+	width: auto;
+}
+.dashboard #content.colMS {
+	margin-right: inherit;
+}
+
+
+#content-main {
+	-moz-columns: 265px;
+	columns: 265px;
+}
+
+#content-related {
+	display: none;
+	width: 0px;
+	margin-right: 0px;
+}
+
+.module {
+	margin-bottom: 0;
+	padding-bottom: 30px;
+	break-inside: avoid;
+}

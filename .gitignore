@@ -1,0 +1,8 @@
+imeter24.sqlite3
+*.pyc
+staticfiles
+.env
+*.DS_Store
+data/imeter24.sqlite3
+data/devices.json
+imeter24/local_settings

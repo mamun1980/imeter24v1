@@ -1,0 +1,37 @@
+{% extends 'admin/change_form.html' %}
+{% load static %}
+{% load adminextra %}
+
+{% block extrahead %}{{ block.super }}
+<script type="text/javascript" src="{% static 'adminextra/ops.js' %}"></script>
+<script>
+django.jQuery(function($) {
+{% for op, tgt, args in ops %}
+  {{ op }}("{{ tgt }}", [{% for a in args %}"{{ a }}", {% endfor %}])
+{% endfor %}
+})
+
+</script>
+{% endblock %}
+
+{% block field_sets %}
+{% if reorder_inlines %}
+	{% for fieldset in adminform %}
+	  {% if fieldset.name.0 != "#" %}
+		{% include "admin/includes/fieldset.html" %}
+	  {% else %}
+		{% inline_form fieldset %}
+	  {% endif %}
+	{% endfor %}
+{% else %}
+	{{ block.super }}
+{% endif %}
+{% endblock %}
+
+{% block inline_field_sets %}
+{% if reorder_inlines %}
+	{# handled in field_sets #}
+{% else %}
+	{{ block.super }}
+{% endif %}
+{% endblock %}

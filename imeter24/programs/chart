@@ -1,0 +1,55 @@
+#!/usr/bin/env python
+
+#System Chart Creator
+
+import os,sys
+import psycopg2
+
+sys.path.append('/usr/home/www/www.imeter24.com/')
+
+from imeter.settings import *	#go get the db table settings etc
+import time,datetime
+
+ts = time.time() #set raw timestamp
+timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+
+
+#Get db settings from settings.py
+#DATABASES =
+#Construct connect string from DATABASES
+#Get default Database Connect Info
+db = DATABASES['default']
+
+
+#Connect to project pgsql database
+conn1 = psycopg2.connect(host=db['HOST'], port=db['PORT'], database=db['NAME'], user=db['USER'], password=db['PASSWORD'])
+pg1 = conn1.cursor()
+
+#I Want to read data from one customer, break it down by meter address & port, location
+#The chart It
+
+command = '''select data_kwatts,data_timestamp from device_data where soldto_id = $$1$$ and device_register = $$8100$$ and device_address = $$12$$'''
+pg1.execute(command)
+data = pg1.fetchall()
+
+print len(data)
+
+#print data	
+f = open('/usr/home/www/www.imeter24.com/d3/stocks.tsv',"w")
+
+for n in range (0,len(data)) :
+	y = data[n]
+	#print y
+	datex = y[1]
+	value = y[0]
+	
+	
+	f.write('12-8100\t' + str(datex) + '\t' + str(value) + '\n')
+
+f.close()	
+
+
+
+
+conn1.close()
+sys.exit()

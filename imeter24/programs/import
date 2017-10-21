@@ -1,0 +1,343 @@
+#!/usr/bin/env python
+
+#ODROID Data Importer
+
+import os,sys
+import time,datetime
+import psycopg2
+import django
+import commands
+
+
+from lib import *
+
+
+
+#Go import the contacts form
+sys.path.append('/usr/home/www/www.imeter24.com/')
+os.environ['DJANGO_SETTINGS_MODULE'] = 'imeter.settings'
+django.setup()
+
+from imeter.Contacts.models import *
+from imeter.Devices.models import *
+
+from imeter.settings import *	#go get the db table settings etc
+
+ts = time.time() #set raw timestamp
+timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S-05')
+
+deletedb = 0
+
+#Get db settings from settings.py
+#DATABASES =
+#Construct connect string from DATABASES
+#Get default Database Connect Info
+db = DATABASES['default']
+
+
+#Connect to project pgsql database
+conn1 = psycopg2.connect(host=db['HOST'], port=db['PORT'], database=db['NAME'], user=db['USER'], password=db['PASSWORD'])
+pg1 = conn1.cursor()
+
+
+#Now go get the vpn info from the login database
+#From here i need to pull in the odroid login id, ip whatever to get the default customer stuff
+#command = '''select accountid,login,login_password,comments,record_created,last_login,locationid,siteid_id,soldto_id,vpn_ip
+#					from login'''
+#pg1.execute(command)
+#login_data = pg1.fetchall()
+
+#Now check the command line to see if we specified a login id or if we are responsible for doing the run?
+print sys.argv
+print len(sys.argv)
+
+if len (sys.argv) == 2 :
+	login_data = Login.objects.all().filter(pk='%s' %str(sys.argv[1]) )  #set login data for one site
+
+else :
+	login_data = Login.objects.all()
+	#Now fork to the background and then exit
+	for n in range (0,len(login_data)) :
+		login_data_current = login_data[n]
+		print login_data_current.accountid
+		
+		if login_data_current.login_status == 'UP' :
+			command = '/usr/bin/python /usr/home/www/www.imeter24.com/imeter/programs/import %s &' %str(login_data_current.accountid)
+			print command
+			os.system(command)
+			
+		else : #down 
+			print 'Connection Down Skipping ....'
+			
+	sys.exit()
+	
+
+for n in range (0,len(login_data)) :
+	print login_data[n]
+	
+	print login_data[n].accountid
+	print login_data[n].login
+	print login_data[n].vpn_ip
+
+#sys.exit()
+
+#Now start the login loop
+for login_loop in range (0,len(login_data)) :
+	
+	login_data_current = login_data[login_loop] #Set the login info from django
+	
+	if login_data_current.login_status == 'UP' : #Then fork this controller to the background?
+	
+		print login_data_current
+		#sys.exit()
+		
+		remote_host = login_data_current.vpn_ip #Set remote ip address to query
+		try :
+			#Connect to ODROID pgsql server (for current login)
+			conn2 = psycopg2.connect(host='%s' %remote_host, database='odroid', user='pgsql', password='Scom411400')
+			pg2 = conn2.cursor()
+
+			#sys.exit()
+			if deletedb <> 0 : #delete database tables if set non zero
+			
+				#Delete the currently imported data
+				command = '''delete from device_config '''
+				pg1.execute(command)
+				conn1.commit()
+
+				command = '''delete from device_data '''
+				pg1.execute(command)
+				conn1.commit()
+
+			#sys.exit()
+			
+			#Databases open - go get device list
+			command = '''select id,filename,port,address,register,serial_number,firmware,oem,model,v_multiplier,
+								v_divider,i_multiplier,i_divider,p_multiplier,p_divider,agl_multiplier,agl_divider,
+								elements,meters
+						from devices'''
+						
+			pg2.execute(command)
+			odroid_device_list = pg2.fetchall()
+			print 'Got ODROID Device List'
+			print '%s Devices Found for Processing' %str(len(odroid_device_list))
+			#print odroid_device_list
+			#print
+			print
+
+			for n in range (0,len(odroid_device_list)) : #Go Get the device List from the controller
+				print 'Processing Controller ID %s' %str(n)
+				odroid_device_data = odroid_device_list[n] #get the record to process
+				print 'odroid_device_data : %s' %str(odroid_device_data) 
+				print
+				filename = odroid_device_data[1]
+				print 'See if we have already got theid identifier (fname) : %s' %filename 
+				#go see if we have the device setup locally yet?
+				#command = '''select * from device_config where device_filename="%s" ''' %str(filename) # do we have a record?
+				command = '''select (device_filename) from device_config where (device_filename) = $xx$%s$xx$ and device_login = $xx$%s$xx$''' %( str(filename),str(login_data_current.login) )
+				#command = '''select * from device_config '''
+				#print
+				#print command
+				#print
+				pg1.execute(command)
+				data = pg1.fetchall()
+				print len(data)
+				print
+				
+				if len(data) == 0 : #No Record found create one
+					print 'Nothing Found, Creating a device entry for %s' %filename
+					print
+					
+					#Set the id from the meter info to the model id?
+					if odroid_device_data[8] == 45 :				#modelid_id from odroid_device_data
+						modelid = 1	
+					if odroid_device_data[8] == 636 :				#modelid_id from odroid_device_data
+						modelid = 3	
+					if odroid_device_data[8] == 888 :				#modelid_id from odroid_device_data
+						modelid = 2					
+					
+					print 'Login Data %s' %str(login_data_current)
+					
+					locationid_login = str(login_data_current.locationid)
+					print locationid_login
+					siteid_login = login_data_current.siteid_id
+					print siteid_login
+					soldto_login = login_data_current.soldto_id
+					print soldto_login
+					site_login_id = login_data_current.login
+					
+					print
+					print
+					#sys.exit()
+					newdevice = Devices_Config( datecreated = timestamp,
+												lastdbread = timestamp,
+												device_disabled = False,
+												device_filename = odroid_device_data[1],
+												device_port = odroid_device_data[2],
+												device_address = odroid_device_data[3],
+												device_register = odroid_device_data[4],
+												device_serial_number = odroid_device_data[5],
+												device_firmware = odroid_device_data[6],
+												device_oem = odroid_device_data[7],
+												device_model = odroid_device_data[8],
+												device_v_multiplier = odroid_device_data[9],
+												device_v_divider = odroid_device_data[10],
+												device_i_multiplier = odroid_device_data[11],
+												device_i_divider = odroid_device_data[12],
+												device_p_multiplier = odroid_device_data[13],
+												device_p_divider = odroid_device_data[14],
+												device_agl_multiplier = odroid_device_data[15],
+												device_agl_divider = odroid_device_data[16],
+												device_elements = odroid_device_data[17],
+												device_numberofmeters = odroid_device_data[18],
+												locationid = locationid_login,
+												siteid_id = siteid_login,
+												soldto_id = soldto_login,
+												modelid_id = modelid,
+												device_login = site_login_id,
+												
+					)
+					
+					newdevice.save()
+					
+				else :
+					print 'Already in Table'
+					#sys.exit()
+			
+			
+			#Odroid Device Config for this controller now loaded into main server
+			#sys.exit()
+				
+			print
+			print
+			#At this point all the odroid controller configs are here (weather already here or we just created it)
+			print 'Getting local Config Data'
+			
+			loginid = str(login_data_current.login)
+			print loginid
+			
+			command = '''select device_filename,device_disabled from device_config where device_login = $$%s$$''' %str(loginid)  #Go get the filenames for this controller against the login id
+			pg1.execute(command)
+			local_device_config = pg1.fetchall() #local_device_config = all config records for this remote controller that we know of (currently only supports 1)
+			print len(local_device_config)
+			#sys.exit()
+			
+			for n in range (0,len(local_device_config)) : #Go get config record(s) so we can open remote table for this remotes data dump
+				print 'Processing Sub Device Record : %s' %str(n)
+				this_device_config = local_device_config[n]
+				if not this_device_config[1] == True :	#device is not disabled go do the read
+					filename = this_device_config[0] #Get the fname id we are going to process data from
+					#we have table name go get data from remote
+					command = '''select id,time,pulled,status,active_phase,voltage_a,voltage_b,voltage_c,
+										current_a,current_b,current_c,watts_a,watts_b,watts_c,va_a,va_b,va_c,
+										var_a,var_b,var_c,power_factor_a,power_factor_b,power_factor_c,
+										kwatts,kva,frequency,voltage_average,total_current,total_watts,total_va
+								from %s  where pulled is null''' %str(filename)
+					
+					print command
+					#sys.exit()
+
+					pg2.execute(command)
+					print 'Getting Remote Data for Device %s' %str(filename)
+					odroid_meter_reads_all = pg2.fetchall() #get the data from the odroid only for table filename
+					
+					
+					#print odroid_meter_reads_all
+					#sys.exit()
+					
+					
+					print 'Found %s Odroid Meter Reads for this Device' %str(len(odroid_meter_reads_all))
+					#sys.exit()
+					#now get the existing config data from the django side (crude but gets us going)
+					#Basically we are looking for soldto, locationid etc for this dataread
+					#To make the django default record to reflect reads for this customer etc.
+					command = '''select id
+								from device_config where  (device_filename) = $xx$%s$xx$ and (device_login) = $$%s$$ ''' %( str(filename),str(loginid) ) 
+					pg1.execute(command)
+					dataxx = pg1.fetchall()
+					dataxx = dataxx[0] #set to one record
+					#sys.exit()
+					print 'Getting Device ID for django lookup'
+					
+					local_config_data_this_device = Devices_Config.objects.get(pk='%s' %str(dataxx[0]) )  #local data = data only for this device
+					
+					
+					print 'local_config_data_this_device : %s' %str(local_config_data_this_device.soldto_id)
+
+					#sys.exit()
+					
+					
+					print len(odroid_meter_reads_all)
+					
+					for nn in range(0,len(odroid_meter_reads_all)) : #Start Processing the meter reads from the odroid device
+						actual_meter_read_data = odroid_meter_reads_all[nn] #actual_meter_read = remote data that we will make a local data record from
+						print actual_meter_read_data
+						
+						print 'Meter Read Data Timestamp from Odroid : %s' %str(actual_meter_read_data[1])
+						print 'Dropping Time Zone'
+						meter_read_timestamp = actual_meter_read_data[1] - datetime.timedelta(minutes = 300)
+						print meter_read_timestamp
+						#sys.exit()
+
+						newread = Devices_Data(	soldto = local_config_data_this_device.soldto,
+												siteid = local_config_data_this_device.siteid,
+												locationid = local_config_data_this_device.locationid,
+												comments = local_config_data_this_device.comments,
+												modelid = local_config_data_this_device.modelid,
+												login = local_config_data_this_device.device_login,
+												device_address = local_config_data_this_device.device_address,
+												device_register = local_config_data_this_device.device_register,
+												device_serial_number = local_config_data_this_device.device_serial_number,
+												data_timestamp = meter_read_timestamp,
+												data_active_phase = actual_meter_read_data[4],
+												data_voltage_a = actual_meter_read_data[5],
+												data_voltage_b = actual_meter_read_data[6],
+												data_voltage_c = actual_meter_read_data[7],
+												data_current_a = actual_meter_read_data[8],
+												data_current_b = actual_meter_read_data[9],
+												data_current_c = actual_meter_read_data[10],
+												data_watts_a = actual_meter_read_data[11],
+												data_watts_b = actual_meter_read_data[12],
+												data_watts_c = actual_meter_read_data[13],
+												data_va_a = actual_meter_read_data[14],
+												data_va_b = actual_meter_read_data[15],
+												data_va_c = actual_meter_read_data[16],
+												data_var_a = actual_meter_read_data[17],
+												data_var_b = actual_meter_read_data[18],
+												data_var_c = actual_meter_read_data[19],
+												data_power_factor_a = actual_meter_read_data[20],
+												data_power_factor_b = actual_meter_read_data[21],
+												data_power_factor_c = actual_meter_read_data[22],
+												data_kwatts = actual_meter_read_data[23],
+												data_kva = actual_meter_read_data[24],
+												data_frequency = actual_meter_read_data[25],
+												data_voltage_average = actual_meter_read_data[26],
+												data_total_current = actual_meter_read_data[27],
+												data_total_watts = actual_meter_read_data[28],
+												data_total_va = actual_meter_read_data[29],
+												remote_id = actual_meter_read_data[0],
+												device_read_status = actual_meter_read_data[3],
+												datecreated = timestamp,
+												)
+						print newread 
+						newread.save()
+						
+						#Now tell the remote we have sucessfully pulled this record
+						updatecommand = '''update %s set pulled = $$%s$$ where id = $$%s$$''' %( str(filename),str(timestamp),str(actual_meter_read_data[0]) )
+						print updatecommand
+						pg2.execute(updatecommand)
+						conn2.commit()
+						#sys.exit()
+				
+				else : #Device disabled
+					print 'Device Disabled, Skipping ....'
+				
+			#Close current remote connection
+			conn2.close()
+		except Exception, e:
+			print
+			print 'Unable to Open Database .... Skipping\n%s\n' %str(e)
+			pass #could not open remote database for some reason?
+			
+conn1.close()
+sys.exit()

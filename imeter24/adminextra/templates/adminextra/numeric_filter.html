@@ -1,0 +1,21 @@
+{% load i18n %}
+<h3>{% blocktrans with filter_title=title %} By {{ filter_title }} {% endblocktrans %}</h3>
+<ul data-filter-type=numeric data-filter-field="{{ spec.field_name }}">
+<form>
+    <li><label for="{{ spec.lookup_kw_min }}">Minimum</label><br>
+        <input name="{{ spec.lookup_kw_min }}" id="{{ spec.lookup_kw_min }}"
+        type=range value="{{ spec.lookup_val_min }}"
+        min="{{ spec.model_min }}" max="{{ spec.model_max }}" step=0.01>
+        <output for="{{ spec.lookup_kw_min }}">
+            {{ spec.lookup_val_min }}</output>
+
+    <li><label for="{{ spec.lookup_kw_max }}">Maximum</label><br>
+        <input name="{{ spec.lookup_kw_max }}" id="{{ spec.lookup_kw_max }}"
+        type=range value="{{ spec.lookup_val_max }}"
+        min="{{ spec.model_min }}" max="{{ spec.model_max }}" step=0.01>
+        <output for="{{ spec.lookup_kw_max }}">
+            {{ spec.lookup_val_max }}</output>
+
+    <li><button type=submit>Filter</button>
+</form>
+</ul>

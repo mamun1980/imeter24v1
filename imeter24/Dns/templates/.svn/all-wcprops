@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/324/Programming/Django/Scom_Billing/scom_billing/Dns/templates
+END
+newdomain.html
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/!svn/ver/324/Programming/Django/Scom_Billing/scom_billing/Dns/templates/newdomain.html
+END
+500.html
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/!svn/ver/324/Programming/Django/Scom_Billing/scom_billing/Dns/templates/500.html
+END
+404.html
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/!svn/ver/324/Programming/Django/Scom_Billing/scom_billing/Dns/templates/404.html
+END
+base.html
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/!svn/ver/324/Programming/Django/Scom_Billing/scom_billing/Dns/templates/base.html
+END
+info.html
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/!svn/ver/324/Programming/Django/Scom_Billing/scom_billing/Dns/templates/info.html
+END

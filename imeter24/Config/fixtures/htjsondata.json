@@ -1,0 +1,42 @@
+[
+{
+  "model": "Config.config_hardware_type",
+  "pk": 1,
+  "fields": {
+    "type": "I-45",
+    "comments": "I45 Meter"
+  }
+},
+{
+  "model": "Config.config_hardware_type",
+  "pk": 2,
+  "fields": {
+    "type": "M12",
+    "comments": "M12 Meter System"
+  }
+},
+{
+  "model": "Config.config_hardware_type",
+  "pk": 3,
+  "fields": {
+    "type": "MP636",
+    "comments": "636 Meter System"
+  }
+},
+{
+  "model": "Config.config_hardware_type",
+  "pk": 4,
+  "fields": {
+    "type": "RLY-1",
+    "comments": "Relay Board Version 1"
+  }
+},
+{
+  "model": "Config.config_hardware_type",
+  "pk": 5,
+  "fields": {
+    "type": "DIS-1",
+    "comments": "Wifi Display Hardware"
+  }
+}
+]

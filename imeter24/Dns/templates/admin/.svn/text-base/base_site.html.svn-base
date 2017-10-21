@@ -1,0 +1,10 @@
+{% extends "admin/base.html" %}
+{% load i18n %}
+
+{% block title %}{{ title }} | {% trans 'Scom.ca DNS site admin' %}{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">{% trans 'Scom.ca Internet Services - DNS Administraton' %}</h1>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

@@ -1,0 +1,66 @@
+	{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{{ title }} | {% trans 'Scom.ca DNS admin' %}{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">{% trans 'Scom.ca Internet Services - DNS Listing' %}</h1>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block content_title %} DNS INFO for {{DNSrecords|first}} {% endblock %}
+
+{% block content %}
+{% if DNSrecords %}
+	<table {#<table border="1" cellspacing="1" cellpadding="1" #} >
+		<tr>
+			<th> id </th>
+			<th> zone </th>
+			<th> ttl</th>
+			<th> type</th>
+			<th> host </th>
+			<th> data</th>
+			<th> mx_priority</th>
+			<th> primary_ns</th>
+			<th> resp_person </th>
+			<th> serial </th>
+			<th> refresh </th>
+			<th> retry</th>
+			<th> expire </th>
+			<th> minimum</th>
+		  <th> status </th>
+			<th> accountid </th> 
+		</tr>
+	{% for DNSrec in DNSrecords %}
+		<tr>
+			<td> {{DNSrec.id }}</td>
+			<td> {{DNSrec.zone }} </td>
+			<td> {{DNSrec.ttl }} </td>
+			<td> {{DNSrec.type }} </td>
+			<td> {{DNSrec.host }} </td>
+			<td> {{DNSrec.data }} </td>
+			<td> {{DNSrec.mx_priority }} </td>
+			<td> {{DNSrec.primary_ns }} </td>
+			<td> {{DNSrec.resp_person }} </td>
+			<td> {{DNSrec.serial }} </td>
+			<td> {{DNSrec.refresh }} </td>
+			<td> {{DNSrec.retry }} </td>
+			<td> {{DNSrec.expire }} </td>
+			<td> {{DNSrec.minimum }} </td>
+			<td> {{DNSrec.status }} </td>
+			<td> {{DNSrec.accountid }} </td> 
+		</tr>
+	{% endfor %}
+  	<tr><td colspan=2> <p> Found {{ DNSrecords|length }} records 
+	  </p> </td> </tr />
+
+	</table>
+{% else %}
+    <p>No domains defined for that name.</p>
+{% endif %}
+{# {% debug %} #}
+{% endblock %}
+
+
+

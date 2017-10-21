@@ -1,0 +1,146 @@
+[
+{
+  "model": "Config.config_contact_type",
+  "pk": 1,
+  "fields": {
+    "type": "home",
+    "comments": null
+  }
+},
+{
+  "model": "Config.config_contact_type",
+  "pk": 2,
+  "fields": {
+    "type": "Office",
+    "comments": null
+  }
+},
+{
+  "model": "Config.config_payment_terms",
+  "pk": 1,
+  "fields": {
+    "type": "TEST1",
+    "comments": null
+  }
+},
+{
+  "model": "Config.config_payment_terms",
+  "pk": 2,
+  "fields": {
+    "type": "Term2",
+    "comments": null
+  }
+},
+{
+  "model": "Config.config_payment_terms",
+  "pk": 3,
+  "fields": {
+    "type": "TERM3",
+    "comments": null
+  }
+},
+{
+  "model": "Config.config_email_type",
+  "pk": 1,
+  "fields": {
+    "type": "Home",
+    "comments": null
+  }
+},
+{
+  "model": "Config.config_email_type",
+  "pk": 2,
+  "fields": {
+    "type": "Office",
+    "comments": null
+  }
+},
+{
+  "model": "Config.config_email_type",
+  "pk": 3,
+  "fields": {
+    "type": "Bussiness",
+    "comments": null
+  }
+},
+{
+  "model": "Config.config_delivery_type",
+  "pk": 1,
+  "fields": {
+    "type": "Home delivery",
+    "comments": null
+  }
+},
+{
+  "model": "Config.config_delivery_type",
+  "pk": 2,
+  "fields": {
+    "type": "UPH",
+    "comments": null
+  }
+},
+{
+  "model": "Config.config_delivery_type",
+  "pk": 3,
+  "fields": {
+    "type": "Currier",
+    "comments": null
+  }
+},
+{
+  "model": "Config.currency_type",
+  "pk": 1,
+  "fields": {
+    "type": "USD",
+    "comments": null
+  }
+},
+{
+  "model": "Config.currency_type",
+  "pk": 2,
+  "fields": {
+    "type": "CAD",
+    "comments": null
+  }
+},
+{
+  "model": "Config.config_hardware_type",
+  "pk": 1,
+  "fields": {
+    "type": "I-45",
+    "comments": "I45 Meter"
+  }
+},
+{
+  "model": "Config.config_hardware_type",
+  "pk": 2,
+  "fields": {
+    "type": "M12",
+    "comments": "M12 Meter System"
+  }
+},
+{
+  "model": "Config.config_hardware_type",
+  "pk": 3,
+  "fields": {
+    "type": "MP636",
+    "comments": "636 Meter System"
+  }
+},
+{
+  "model": "Config.config_hardware_type",
+  "pk": 4,
+  "fields": {
+    "type": "RLY-1",
+    "comments": "Relay Board Version 1"
+  }
+},
+{
+  "model": "Config.config_hardware_type",
+  "pk": 5,
+  "fields": {
+    "type": "DIS-1",
+    "comments": "Wifi Display Hardware"
+  }
+}
+]

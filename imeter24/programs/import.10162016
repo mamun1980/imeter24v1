@@ -1,0 +1,285 @@
+#!/usr/bin/env python
+
+#ODROID Data Importer
+
+import os,sys
+import psycopg2
+
+sys.path.append('/usr/home/www/www.imeter24.com/')
+
+from imeter.settings import *	#go get the db table settings etc
+import time,datetime
+
+ts = time.time() #set raw timestamp
+timestamp = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+
+deletedb = 0
+
+#Get db settings from settings.py
+#DATABASES =
+#Construct connect string from DATABASES
+#Get default Database Connect Info
+db = DATABASES['default']
+
+
+#Connect to project pgsql database
+conn1 = psycopg2.connect(host=db['HOST'], port=db['PORT'], database=db['NAME'], user=db['USER'], password=db['PASSWORD'])
+pg1 = conn1.cursor()
+
+
+#Now go get the vpn info from the login database
+#From here i need to pull in the odroid login id, ip whatever to get the default customer stuff
+command = '''select accountid,login,login_password,comments,record_created,last_login,locationid,siteid_id,soldto_id,vpn_ip
+					from login'''
+pg1.execute(command)
+login_data = pg1.fetchall()
+
+#Now start the login loop
+for login_loop in range (0,len(login_data)) :
+	login_data_current = login_data[login_loop] #Set the login info
+	
+	print login_data_current
+	
+	remote_host = str(login_data_current[9]) #Set remote ip address to query
+	
+	#Connect to ODROID pgsql server (for current login)
+	conn2 = psycopg2.connect(host='%s' %remote_host, database='odroid', user='pgsql', password='Scom411400')
+	pg2 = conn2.cursor()
+
+	#sys.exit()
+	if deletedb <> 0 : #delete database tables if set non zero
+	
+		#Delete the currently imported data
+		command = '''delete from device_config '''
+		pg1.execute(command)
+		conn1.commit()
+
+		command = '''delete from device_data '''
+		pg1.execute(command)
+		conn1.commit()
+
+	#sys.exit()
+	
+	#Databases open - go get device list
+	command = '''select id,filename,port,address,register,serial_number,firmware,oem,model,v_multiplier,
+						v_divider,i_multiplier,i_divider,p_multiplier,p_divider,agl_multiplier,agl_divider,
+						elements,meters
+				from devices'''
+				
+	pg2.execute(command)
+	odroid_device_list = pg2.fetchall()
+	print 'Got ODROID Device List'
+	print '%s Devices Found for Processing' %str(len(odroid_device_list))
+	#print odroid_device_list
+	#print
+	print
+
+	for n in range (0,len(odroid_device_list)) : #Go Get the device List from the controller
+		print 'Processing Controller ID %s' %str(n)
+		odroid_device_data = odroid_device_list[n] #get the record to process
+		print 'odroid_device_data : %s' %str(odroid_device_data) 
+		print
+		filename = odroid_device_data[1]
+		print 'See if we have already got theid identifier (fname) : %s' %filename 
+		#go see if we have the device setup locally yet?
+		#command = '''select * from device_config where device_filename="%s" ''' %str(filename) # do we have a record?
+		command = '''select (device_filename) from device_config where (device_filename) = $xx$%s$xx$ ''' %str(filename)
+		#command = '''select * from device_config '''
+		#print
+		#print command
+		#print
+		pg1.execute(command)
+		data = pg1.fetchall()
+		print len(data)
+		print
+		
+		if len(data) == 0 : #No Record found create one
+			print 'Nothing Found, Creating a device entry for %s' %filename
+			print
+			
+
+			
+			local_config_data = []
+			for nn in range (0,26) :
+				local_config_data.append('')
+
+			local_config_data[0] = "nextval('device_config_id_seq'::regclass)"	#id
+			local_config_data[1] = timestamp	#datecreated
+			local_config_data[2] = timestamp	#lastdbread
+			local_config_data[3] = odroid_device_data[1]	#device_filename
+			local_config_data[4] = odroid_device_data[2]	#device_port
+			local_config_data[5] = odroid_device_data[3]	#device_address
+			local_config_data[6] = odroid_device_data[4]	#device_register
+			local_config_data[7] = odroid_device_data[5]	#device_serial_number
+			local_config_data[8] = odroid_device_data[6]	#device_firmware
+			local_config_data[9] = odroid_device_data[7]	#device_oem
+			local_config_data[10] = odroid_device_data[8]	#device_model
+			local_config_data[11] = odroid_device_data[9]	#device_v_multiplier
+			local_config_data[12] = odroid_device_data[10]	#device_v_divider
+			local_config_data[13] = odroid_device_data[11]	#device_i_multiplier
+			local_config_data[14] = odroid_device_data[12]	#device_i_divider
+			local_config_data[15] = odroid_device_data[13]	#device_p_multiplier
+			local_config_data[16] = odroid_device_data[14]	#device_p_divider
+			local_config_data[17] = odroid_device_data[15]	#device_agl_multiplier
+			local_config_data[18] = odroid_device_data[16]	#device_agl_divider
+			local_config_data[19] = odroid_device_data[17]	#device_elements
+			local_config_data[20] = odroid_device_data[18]	#device_numberofmeters
+			local_config_data[21] = login_data_current[6]	#locationid
+			
+			if odroid_device_data[8] == 45 :				#modelid_id from odroid_device_data
+				local_config_data[22] =	1	
+			if odroid_device_data[8] == 636 :				#modelid_id from odroid_device_data
+				local_config_data[22] =	3	
+			if odroid_device_data[8] == 888 :				#modelid_id from odroid_device_data
+				local_config_data[22] =	2					
+			
+			
+			local_config_data[23] = login_data_current[7]	#siteid_id
+			local_config_data[24] = login_data_current[8]	#soldto_id
+			
+			
+			d = str(local_config_data[0])
+			for nn in range (1,25) :
+				d = d + ",'" + str(local_config_data[nn]) + "'"
+			
+			command = '''insert into device_config values (%s) ''' %str(d)
+			print command
+			#sys.exit()
+			pg1.execute(command) # write to django table
+			conn1.commit()
+			
+		else :
+			print 'Already in Table'
+			#sys.exit()
+	#Odroid Device Config for this controller now loaded into main server
+		
+	#sys.exit()
+		
+	print
+	print
+	#At this point all the odroid controller configs are here (weather already here or we just created it)
+	print 'Getting local Config Data'
+
+	command = '''select device_filename from device_config''' #Go get the filenames for this controller (supports only one at the moment)
+	pg1.execute(command)
+	local_device_config = pg1.fetchall() #local_device_config = all config records for this remote controller that we know of (currently only supports 1)
+
+	for n in range (0,len(local_device_config)) : #Go get config record(s) so we can open remote table for this remotes data dump
+		print 'Processing Sub Device Record : %s' %str(n)
+		this_device_config = local_device_config[n]
+		filename = this_device_config[0] #Get the fname id we are going to process data from
+		#we have table name go get data from remote
+		command = '''select id,time,pulled,status,active_phase,voltage_a,voltage_b,voltage_c,
+							current_a,current_b,current_c,watts_a,watts_b,watts_c,va_a,va_b,va_c,
+							var_a,var_b,var_c,power_factor_a,power_factor_b,power_factor_c,
+							kwatts,kva,frequency,voltage_average,total_current,total_watts,total_va
+					from %s  where pulled is null''' %str(filename)
+		
+		print command
+		#sys.exit()
+
+		pg2.execute(command)
+		print 'Getting Remote Data for Device %s' %str(filename)
+		odroid_meter_reads_all = pg2.fetchall() #get the data from the odroid only for table filename
+		
+		
+		print 'Found %s Odroid Meter Reads for this Device' %str(len(odroid_meter_reads_all))
+		#sys.exit()
+		#now get the existing config data from the django side (crude but gets us going)
+		#Basically we are looking for soldto, locationid etc for this dataread
+		#To make the django default record to reflect reads for this customer etc.
+		command = '''select soldto_id,siteid_id,locationid,modelid_id,device_address,device_register,
+							device_serial_number
+					from device_config where  (device_filename) = $xx$%s$xx$  ''' %filename 
+		pg1.execute(command)
+			
+		print 'Getting Default data for this Device'
+		local_config_data_this_device = pg1.fetchall() #local data = data only for this device
+		print 'local_config_data_this_device : %s' %str(len(local_config_data_this_device))
+		
+		if len(local_config_data_this_device) <> 1 :
+			print 'No Config Record Found or More then One Config Record Found'
+			sys.exit()
+		
+		local_config_data_this_device = local_config_data_this_device[0]
+		
+		print
+		print local_config_data_this_device
+		print
+		
+		print len(odroid_meter_reads_all)
+		
+		for nn in range(0,len(odroid_meter_reads_all)) : #Start Processing the meter reads from the odroid device
+			actual_meter_read_data = odroid_meter_reads_all[nn] #actual_meter_read = remote data that we will make a local data record from
+			print actual_meter_read_data
+			
+			#sys.exit()
+			#Create a blank array
+			write_data = []
+			for nn in range(0,38) :
+				write_data.append('')
+			
+			write_data[0] = "nextval('device_data_id_seq'::regclass)"	#id
+			write_data[1] = local_config_data_this_device[0]	#soldto
+			write_data[2] = local_config_data_this_device[1]	#siteid
+			write_data[3] = local_config_data_this_device[2]	#locationid
+			write_data[4] = local_config_data_this_device[3]	#modelid
+			write_data[5] = local_config_data_this_device[4]	#device_address
+			write_data[6] = local_config_data_this_device[5]	#device_register
+			write_data[7] = local_config_data_this_device[6]	#device_serial_number
+			write_data[8] = actual_meter_read_data[1]	#data_timestamp
+			write_data[9] = actual_meter_read_data[4]	#data_active_phase
+			write_data[10] = actual_meter_read_data[5]	#data_voltage_a
+			write_data[11] = actual_meter_read_data[6]	#data_voltage_b
+			write_data[12] = actual_meter_read_data[7]	#data_voltage_c
+			write_data[13] = actual_meter_read_data[8]	#data_current_a
+			write_data[14] = actual_meter_read_data[9]	#data_current_b
+			write_data[15] = actual_meter_read_data[10]	#data_current_c
+			write_data[16] = actual_meter_read_data[11]	#data_watts_a
+			write_data[17] = actual_meter_read_data[12]	#data_watts_b
+			write_data[18] = actual_meter_read_data[13]	#data_watts_c
+			write_data[19] = actual_meter_read_data[14]	#data_va_a
+			write_data[20] = actual_meter_read_data[15]	#data_va_b
+			write_data[21] = actual_meter_read_data[16]	#data_va_c
+			write_data[22] = actual_meter_read_data[17]	#data_var_a
+			write_data[23] = actual_meter_read_data[18]	#data_var_b
+			write_data[24] = actual_meter_read_data[19]	#data_var_c
+			write_data[25] = actual_meter_read_data[20]	#data_power_factor_a
+			write_data[26] = actual_meter_read_data[21]	#data_power_factor_b
+			write_data[27] = actual_meter_read_data[22]	#data_power_factor_c
+			write_data[28] = actual_meter_read_data[23]	#data_kwatts
+			write_data[29] = actual_meter_read_data[24]	#data_kva
+			write_data[30] = actual_meter_read_data[25]	#data_frequency
+			write_data[31] = actual_meter_read_data[26]	#data_voltage_average
+			write_data[32] = actual_meter_read_data[27]	#data_total_current
+			write_data[33] = actual_meter_read_data[28]	#data_total_watts
+			write_data[34] = actual_meter_read_data[29]	#data_total_va
+			write_data[35] = actual_meter_read_data[0] 	#remote_id
+			write_data[36] = actual_meter_read_data[3] 	#read status
+			write_data[37] = timestamp					#Set current date/time for record creation
+		
+			d = str(write_data[0])
+			for nn in range (1,38) :
+				if str(write_data[nn]) == '' or str(write_data[nn]) == 'None' :
+					d = d + ",NULL"
+				else :
+					d = d + ",'" + str(write_data[nn]) + "'"
+			
+			insertcommand  = """insert into device_data values (%s)""" %str(d)		
+			print
+			print 'Insert Command : %s' %str(insertcommand)
+			pg1.execute(insertcommand)
+			conn1.commit()
+			
+			#Now tell the remote we have sucessfully pulled this record
+			updatecommand = '''update %s set pulled = $$%s$$ where id = $$%s$$''' %( str(filename),str(timestamp),str(actual_meter_read_data[0]) )
+			print updatecommand
+			pg2.execute(updatecommand)
+			conn2.commit()
+			#sys.exit()
+	
+	#Close current remote connection
+	conn2.close()
+
+conn1.close()
+sys.exit()
